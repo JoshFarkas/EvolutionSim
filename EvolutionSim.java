@@ -18,7 +18,6 @@ public class EvolutionSim {
    private List<Organism> organisms = new ArrayList<>();
    private WorldNode[][] world;
    private int time;
-
    private Random rand;
    
    public EvolutionSim(int worldSize, int numOrganisms, int numShelters, int maxFood, int dayLength) {
