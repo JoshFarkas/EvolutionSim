@@ -1,4 +1,4 @@
-package AdvProgrammingTopics;
+
 import java.awt.Canvas;
 import java.awt.Graphics;
 import java.awt.Color;
@@ -9,7 +9,7 @@ public class Drawing extends Canvas {
     private final int WINDOWSIZE = 700;
     public Drawing() {
        JFrame frame = new JFrame("My Drawing");
-       Canvas canvas = new EvolutionSim.Drawing();
+       Canvas canvas = new Drawing();
        canvas.setSize(WINDOWSIZE, WINDOWSIZE);
        frame.add(canvas);
        frame.pack();
