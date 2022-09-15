@@ -1,6 +1,8 @@
 package AdvProgrammingTopics;
 import java.util.*;
 import java.awt.Point;
+
+// Graphics Libraries
 import java.awt.Canvas;
 import java.awt.Graphics;
 import java.awt.Color;
