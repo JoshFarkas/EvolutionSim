@@ -7,14 +7,15 @@ public class EvolutionSim {
    private int maxFood;
    private int dayLength;
 
-   private Set<Organism> organisms;
+   private List<Organism> organisms;
    private WorldNode[][] world;
    private int time;
    private Random rand;
+   private String visionOutput;
    
    public EvolutionSim (int worldSize, int numOrganisms, int maxFood, int dayLength) {
       rand = new Random();
-      organisms = new HashSet<>();
+      organisms = new LinkedList<>();
       // this.worldSize = worldSize;
       this.numOrganisms = numOrganisms;
       this.maxFood = maxFood;
@@ -22,6 +23,7 @@ public class EvolutionSim {
       this.worldSize = worldSize;
       world = new WorldNode[worldSize][worldSize];
       time = 0;
+      visionOutput = "";
 
       // Initialize World
       for (int y = 0; y < worldSize; y++) {
@@ -86,13 +88,13 @@ public class EvolutionSim {
    }
 
 
-   private void pause(int ms) {
-      try {
-         Thread.sleep(ms);
-      } catch (InterruptedException e) {
-         System.err.format("IOException: %s%n", e);
-      }
-   }
+   // private void pause(int ms) {
+   //    try {
+   //       Thread.sleep(ms);
+   //    } catch (InterruptedException e) {
+   //       System.err.format("IOException: %s%n", e);
+   //    }
+   // }
 
    // Simulate full day
    public void runDay(int day) {
@@ -113,6 +115,7 @@ public class EvolutionSim {
          o.tick();
       }
       display();
+      visionOutput = "";
    }
 
    public void endDay(int day) {
@@ -122,13 +125,15 @@ public class EvolutionSim {
       while(itr.hasNext()) {
          itr.next().endDay(itr);
       }
-      // for (Organism o : organisms) {
-      //    o.endDay();
-      // }
    }
 
    public void display() {
       System.out.println();
+      System.out.println();
+      System.out.print("    ");
+      for (int i = 0; i < worldSize; i++) {
+         System.out.print((i / 10 > 0 ? i / 10 : " ") + " ");
+      }
       System.out.println();
       System.out.print("    ");
       for (int i = 0; i < worldSize; i++) {
@@ -139,23 +144,25 @@ public class EvolutionSim {
       for (int i = 0; i < worldSize; i++) { // Row
          System.out.print((i < 10 ? "  " : " ") + i + " ");
          String toPrint = "";
-         int orgNum = 1;
          for (int j = 0; j < worldSize; j++) { // Col
             if (world[i][j].hasOrganism()) {
-               System.out.print("O");
-               for (Organism o : world[i][j].organisms) {
-                  toPrint += "[" + orgNum + "] V: " + o.vision + " R: " + o.reproduction + " F: " + o.food + " | ";
-                  orgNum++;
-               }
+               // Print display char of some organism in the tile
+               System.out.print(world[i][j].organisms.get(0).symbol);
             } else if (world[i][j].hasFood) {
-               System.out.print( "F");
+               System.out.print( "#");
             } else {
                System.out.print("-");
             }
             System.out.print(" ");
          }
-         System.out.println(toPrint);
+         System.out.println();
       }
+      System.out.println();
+      for (Organism o : organisms) {
+         System.out.println(o.data());
+      }
+      System.out.println("\nVISION:");
+      System.out.println(visionOutput);
    }
 
 
@@ -164,9 +171,10 @@ public class EvolutionSim {
 
    // ORGANISM CLASS
    private class Organism {
-      private static int nameCounter = 1;
+      private static int nameCounter = 0;
       private static final int VARIANCE = 5; // How different offspring will be from this creature
       private String name;
+      private char symbol; // ASCII symbol used to display
       private int food; // current food found
       private int age;
    
@@ -198,6 +206,10 @@ public class EvolutionSim {
          rand = new Random();
    
          this.name = "Organism " + nameCounter;
+         
+         // Starts at 'a' and goes upwards until 'z', then goes to 'A' - 'Z'
+         this.symbol = (nameCounter < 26 ? (char) ('a' + nameCounter) : (char) ('A' + nameCounter - 26));
+
          nameCounter++;
    
       }
@@ -225,36 +237,41 @@ public class EvolutionSim {
    
       private Point findClosestFood() {
          int bestDist = worldSize + 1; // Set to a number higher than possible so any found obj is closer
-         List < Point > closestFood = new ArrayList < > ();
-         for (int a = this.x - vision; a < this.x + vision + 1; a++) {
-            if (a >= 0 && a < worldSize) {
-               for (int b = this.y - vision; b < this.y + vision; b++) {
-                  if (b >= 0 && b < worldSize) {
-                     if (world[a][b].hasFood) {
-                        int dist = Math.max(a, b);
-                        if (dist < bestDist) {
-                           bestDist = dist;
-                           closestFood.clear();
-                        }
-                        if (dist == bestDist) {
-                           closestFood.add(new Point(a, b));
-                        }
-                     }
+         List<Point> closestFood = new ArrayList<>();
+         for (int a = this.x - vision; a <= this.x + vision; a++) {
+            // Handles if a is out of bounds
+            if (a < 0 || a >= worldSize) {
+               continue;
+            }
+            for (int b = this.y - vision; b < this.y + vision; b++) {
+               // Handles if b is out of bounds
+               if (b < 0 || b >= worldSize) {
+                  continue;
+               }
+               if (world[b][a].hasFood) {
+                  int dist = Math.max(a, b);
+                  if (dist < bestDist) {
+                     bestDist = dist;
+                     closestFood.clear();
+                  }
+                  if (dist == bestDist) {
+                     closestFood.add(new Point(a, b));
                   }
                }
             }
+            
          }
          if (closestFood.size() == 0) {
+            visionOutput += "[" + this.symbol + "] " + " NO FOOD FOUND\n";
             return null;
          }
          Point out = closestFood.get(rand.nextInt(closestFood.size()));
-         System.out.print(out);
+         visionOutput += "[" + this.symbol + "] " + "x: " + out.x + " y: " + out.y + "\n";
          return out;
       }
    
-      public String printInfo() {
-         String output = "Name: " + name + " x: " + x + " y: " + y + " food: " + food + " vision: " + vision;
-         System.out.println(output);
+      public String data() {
+         String output = "[" + symbol + "] x: " + x + " y: " + y + " V: " + vision + " R: " + reproduction;
          return output;
       }
    
@@ -279,7 +296,7 @@ public class EvolutionSim {
             }
          }
 
-         System.out.print(" x:" + x + " y: " + y + " xdir: " + xdir + " ydir: " + ydir);
+         // System.out.print(" x:" + x + " y: " + y + " xdir: " + xdir + " ydir: " + ydir);
 
          currNode.removeOrganism(this);
          x += xdir;
@@ -287,7 +304,7 @@ public class EvolutionSim {
          // Clamp between 0 and worldSize
          x = x > worldSize - 1 ? worldSize - 1 : x < 0 ? 0 : x;
          y = y > worldSize - 1 ? worldSize - 1 : y < 0 ? 0 : y;
-         System.out.println(" newX: " + x + " newY: " + y);
+         // System.out.println(" newX: " + x + " newY: " + y);
          currNode = world[y][x];
          currNode.addOrganism(this);
       }
@@ -324,14 +341,14 @@ public class EvolutionSim {
 
    // WORLDNODE CLASS
    public class WorldNode {
-      public Set<Organism> organisms;
+      public List<Organism> organisms;
       public boolean hasFood;
       
       public WorldNode(boolean hasFood) {
-          this(hasFood, new HashSet<>());
+          this(hasFood, new LinkedList<>());
       }
   
-      public WorldNode(boolean hasFood, Set<Organism> organisms) {
+      public WorldNode(boolean hasFood, List<Organism> organisms) {
           this.organisms = organisms;
           this.hasFood = hasFood;
       }
