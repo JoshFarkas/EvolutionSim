@@ -283,7 +283,7 @@ public class EvolutionSim {
          // Long lines just limit the decimal to 3 places
          System.out.println("Day " + i 
                            + " | Vision: " + visionAverages.get(i).toString().substring(0, Math.min(visionAverages.get(i).toString().length(), 4))
-                           + " | Reproduction: " + visionAverages.get(i).toString().substring(0, Math.min(visionAverages.get(i).toString().length(), 4);
+                     + " | Reproduction: " + reproAverages.get(i).toString().substring(0, Math.min(reproAverages.get(i).toString().length(), 4)));
       }
    }
 
